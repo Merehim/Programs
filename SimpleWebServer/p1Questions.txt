@@ -6,6 +6,6 @@ Jose Pacheco
    Thought/Design: 1.5 hours
    Programming: 2.25 hours
    Debugging: 2.00 hours
-   TOTAL: 6.5 hours
+   TOTAL: 5.75 hours
 
-3. Percent accuracy: 84.615%
+3. Percent accuracy: 104.54%
