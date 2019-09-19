@@ -1,0 +1,11 @@
+Jose Pacheco
+
+1. Estimate time to do assignment 5.25 hours
+2. Estimate the time it took you to complete the assignment, broken down as:
+
+   Thought/Design: 1.5 hours
+   Programming: 2.25 hours
+   Debugging: 2.00 hours
+   TOTAL: 6.5 hours
+
+3. Percent accuracy: 84.615%
