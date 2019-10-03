@@ -30,17 +30,19 @@ import java.lang.Runnable;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class WebWorker implements Runnable
 {
 	
 	int errCode;
-	String fileName;;
-	private Socket socket;
+	String fileName;
+	
 	Date date = new Date();
-	DateFormat formatDate = DateFormat.getDateTimeInstance();
+	DateFormat formatedDate = DateFormat.getDateTimeInstance();
+	formatedDate.setTimeZone(TimeZone.getTimeZone("GMT")
 	
-	
+	private Socket socket;	
 
 	/**
 	 * Constructor: must have a valid open socket
@@ -62,32 +64,35 @@ public class WebWorker implements Runnable
 		System.err.println("Handling connection...");
 		try 
 		{
-			String contentType = "text/html";	
+			String contentType = "";	
 			InputStream  is = socket.getInputStream();	
 			OutputStream os = socket.getOutputStream();
 			String pathName = readHTTPRequest(is);
-			if(filename.contains(".png ")
+			
+			if(pathName.contains(".png ")
 			{
 				contentType = "image/png";
 			}
-			if(filename.contains(".jpeg ")
+			else if(pathName.contains(".jpeg ")
 			{
 				contentType = "image/jpeg";
 			}
-			if(filename.contains(".gif ")
+			else if(pathName.contains(".gif ")
 			{
 				contentType = "image/gif";
 			}
-			writeHTTPHeader(os, contentType, pathName);			
-			
-			if (contentType.contains("text/html");
-			{			
-				writeContent(os, pathName);		
+			else if(pathName.contains(".ico ")
+			{
+				contentType = "image/x-icon";
 			}
 			else
 			{
-				writeImageContent(os, contentType, pathName); nv
+				contentType = "text/html";	
 			}
+			
+			writeHTTPHeader(os, contentType, pathName);			
+			writeContent(os, pathName, contentType);		
+						
 			os.flush();
 			socket.close();
 		} 
@@ -115,6 +120,7 @@ public class WebWorker implements Runnable
 			{
 				while (!r.ready()) Thread.sleep(1);
 				line = r.readLine();
+				
 				// Parse the file name and extension
 				if (line.contains("GET ")) 
 				{
@@ -123,17 +129,14 @@ public class WebWorker implements Runnable
 					{
 						if (path.charAt(i) == ' ')
 						{
-							path = path.substring(0,i);		//look near here for getting path and img info
+							path = path.substring(0,i);
+							break;		
 						}
 					}
-					path = "." + path;
 					System.err.println("Path collected: " + path);
 				}
 				System.err.println("Request line: ("+line+")");
-				if (line.length() == 0) 
-				{
-					break;
-				}
+				if (line.length() == 0) { break; }
 			}
 			catch (Exception e) 
 			{
@@ -141,6 +144,7 @@ public class WebWorker implements Runnable
 				break;
 			}
 		}
+		path = System.getProperty("user.dir") + path;
 		return path;
 	}
 
@@ -151,7 +155,6 @@ public class WebWorker implements Runnable
 	 **/
 	private void writeHTTPHeader(OutputStream os, String contentType, String contentPath) throws Exception
 	{
-
 		File contentFile = new File(contentPath);
 		// If the file created exists then send 200
 		if(contentFile.exists()) 
@@ -170,7 +173,6 @@ public class WebWorker implements Runnable
 		os.write((formatDate.format(date)).getBytes());
 		os.write("\n".getBytes());
 		os.write("Server: Joey's Server\n".getBytes());
-		os.write("Content-Length: 438\n".getBytes());
 		os.write("Connection: close\n".getBytes());
 		os.write("Content-Type: ".getBytes());
 		os.write(contentType.getBytes());
@@ -183,7 +185,7 @@ public class WebWorker implements Runnable
 	 * be done after the HTTP header has been written out.
 	 * @param os is the OutputStream object to write to
 	 **/
-	private void writeContent(OutputStream os, String contentPath) throws Exception
+	private void writeContent(OutputStream os, String contentType, String contentPath) throws Exception
 	{
 		String content = "";
 		String pathContent = contentPath;
@@ -191,30 +193,43 @@ public class WebWorker implements Runnable
 		if (errCode == 200) 
 		{
 			File fileName = new File(pathContent);
-			BufferedReader buffer = new BufferedReader(new FileReader(fileName));
-			while ((content = buffer.readLine()) != null) 
+			BufferedReader buffer = null;
+			try
 			{
-				
-				if(content.contains("<cs371date>"))
-				{
-					content += formatDate.format(date); // Replace <cs371date> tag with today's date
-				}
-
-				else if(content.contains("<cs371server>"))
-				{
-					content += "TAGGY"; // Replace <cs371server> with specified string
-				}			
-				
-				os.write(content.getBytes());
-				os.write( "\n".getBytes());
+				buffer = new BufferedReader(new FileReader(fileName));
 			}
-		} 
-		else
-		{
-			os.write("<body bgcolor = \"#666FFF\">".getBytes());
-			os.write("<h1><b>404: Not Found</b></h1>".getBytes());
-			os.write("The page you are looking for does not exist!".getBytes());
-		}
+			catch (FileNotFoundException e)
+			{
+				os.write("<body bgcolor = \"#666FFF\">".getBytes());
+				os.write("<h1><b>404: Not Found</b></h1>".getBytes());
+				os.write("The page you are looking for does not exist!".getBytes());
+				throw e;
+			}
+			
+			if (contentType.equals("text/html"))
+			{
+				while ((content = buffer.readLine()) != null) 
+				{
+					if(content.contains("<cs371date>"))
+					{
+						content += formatDate.format(date); // Replace <cs371date> tag with today's date
+					}
+					else if(content.contains("<cs371server>"))
+					{
+						content += "NewTag"; // Replace <cs371server> with specified string
+					}			
+						
+					os.write(content.getBytes());
+					os.write( "\n".getBytes());
+				}
+			}
+			else if (contentType.contains("image"))
+			{
+				FileInputStream imageIn = new FileInputStream(filename);
+				byte imageArray[] = new byte [(int) filename.length()]; 
+				imageIn.read(imageArr);
+				DataOutputStream imgOut = new DataOutputStream(os);
+				imgOut.write(imgArr);
+			}	
 	}
-
 } // end class
